@@ -1,0 +1,44 @@
+name: Extract ZIP File
+
+on:
+  push:
+    paths:
+      - '**.zip'
+  workflow_dispatch:
+
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Unzip workspace.zip
+        run: |
+          # Remove existing folders (if any) to avoid conflicts
+          rm -rf public src package.json vite.config.ts tailwind.config.js
+          
+          # Get the zip filename (assumes one zip file)
+          filename=$(basename -s .zip *.zip)
+          
+          # Unzip the archive
+          unzip *.zip
+          
+          # Remove the original zip file
+          rm *.zip
+          
+          # If the zip extracted into a folder, move contents up
+          if [ -d "$filename" ]; then
+            mv $filename/* .
+            rmdir $filename
+          fi
+          
+          # Configure git
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          
+          # Add all new files and commit
+          git add .
+          git commit -m "Auto-unzipped workspace files"
+          git push origin main
